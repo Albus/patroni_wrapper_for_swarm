@@ -43,7 +43,7 @@ class HostsSettings(BaseSettings):
     class Config:
 
         @staticmethod
-        def env_loads(value: str) -> Union[Host, List[Host]]:
+        def json_loads(value: str) -> Union[Host, List[Host]]:
             urls: List[URL] = [URL(r'raft://' + i.strip(r"'")) for i in value.split(sep=r"','")]
             hosts: List[Host] = [
                     Host(name=getfqdn(name=i.host), ip=IPv4Address(address=gethostbyname(i.host)), port=i.port)
@@ -54,8 +54,6 @@ class HostsSettings(BaseSettings):
                 return hosts
             else:
                 raise EnvironmentError
-
-        json_loads = env_loads
 
     @root_validator
     def root_validator(cls, values: Dict[str, Union[Host, List[Host]]]):  # noqa
@@ -69,11 +67,11 @@ class HostsSettings(BaseSettings):
     def getTable(self) -> prettytable.PrettyTable:
         return prettytable.PrettyTable(border=True, field_names=(r'Hostname', r'Address', r'Port'))
 
-    @validator(r'myself', pre=False, each_item=False, always=True, check_fields=True, whole=True, allow_reuse=True)
+    @validator(r'myself', pre=False, each_item=False, always=True, check_fields=True, allow_reuse=True)
     def validator_myself(cls, value, values, config, field):  # noqa
         return value
 
-    @validator(r'partners', pre=False, each_item=False, always=True, check_fields=True, whole=True, allow_reuse=True)
+    @validator(r'partners', pre=False, each_item=False, always=True, check_fields=True, allow_reuse=True)
     def validator_partners(cls, value, values, config, field):  # noqa
         return value
 
