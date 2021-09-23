@@ -16,6 +16,9 @@ from yarl import URL
 if not __debug__: sys.tracebacklimit = 0
 
 
+# region Classes
+
+# region HostsSettings
 class Host(BaseModel):
     name: constr(regex=r'^[a-z0-9]+$')
     ip: IPv4Address
@@ -72,6 +75,9 @@ class HostsSettings(BaseSettings):
         return value
 
 
+# endregion HostsSettings
+
+# region Logger
 class InterceptHandler(logging.Handler):
 
     def emit(self, record):
@@ -84,6 +90,10 @@ class InterceptHandler(logging.Handler):
                           exception=record.exc_info).log(logging.getLevelName(record.levelno) or record.levelname,
                                                          record.getMessage())
 
+
+# endregion Logger
+
+# endregion Classes
 
 def customize_logging(level: int):
     loguru.logger.remove()
@@ -110,8 +120,14 @@ def customize_logging(level: int):
 
 
 if __name__ == r'__main__':
-    hosts = HostsSettings()
 
+    hosts = HostsSettings()
+    os.environ[r'PATRONI_RAFT_PARTNER_ADDRS'] = r",".join([f"'{i.env}'" for i in hosts.partners])
+    os.environ[r'PATRONI_RAFT_SELF_ADDR'] = hosts.myself.env
+
+    customize_logging(level=logging.DEBUG)
+
+    # region Вывод таблиц
     tb = hosts.getTable
 
     tb.title = r'Собственный адрес в кластере'
@@ -124,12 +140,6 @@ if __name__ == r'__main__':
         tb.add_row(tuple(partner.dict().values()))
     loguru.logger.debug(os.linesep + tb.get_string())
 
-    customize_logging(level=logging.DEBUG)
-
-    loguru.logger.info(r'Стартуем')
-    os.environ[r'PATRONI_RAFT_PARTNER_ADDRS'] = r",".join([f"'{i.env}'" for i in hosts.partners])
-    os.environ[r'PATRONI_RAFT_SELF_ADDR'] = hosts.myself.env
-
     tb.clear()
     tb.title = r'Переменные окружения'
     tb.field_names = (r'Наименование', r'Значение')
@@ -137,6 +147,8 @@ if __name__ == r'__main__':
                   os.environ[HostsSettings.schema().get(r'properties').get(v).get(r'env')])
                  for v in HostsSettings.schema().get(r'properties')))
     loguru.logger.debug(os.linesep + tb.get_string())
+    # endregion Вывод таблиц
 
+    loguru.logger.info(r'Стартуем')
     main()
     loguru.logger.info(r'Уходим')
