@@ -1,9 +1,5 @@
 #!/usr/bin/env -S python -O -OO -b -B -q -x -X utf8 -W"ignore"
 
-"""
-exec env `env PATRONI_RAFT_PARTNER_ADDRS="'10.12.1.77:2222','10.12.1.78:2222','10.12.1.79:2222'"
-              PATRONI_RAFT_SELF_ADDR=etcd079:2222 python main.opt-2.py | xargs` python main.opt-2.py
-"""
 import logging
 import os
 import sys
