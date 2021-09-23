@@ -1,0 +1,59 @@
+version: "3.7"
+
+services:
+  controller:
+    init: true
+    container_name: patroni_raft_controller
+    image: "docker.io/albus/patroni_raft_wrapper_for_swarm:2.1.1"
+  #  configs:
+  #  - source: patroni.yaml
+  #    target: /etc/patroni.yaml
+  #    uid: "root"
+  #    gid: "root"
+  #    mode: 0444
+    ports:
+    - target: ${PORT_RAFT:-2222}
+      published: ${PORT_RAFT:-2222}
+      protocol: tcp
+      mode: host
+    volumes:
+    - type: volume
+      source: data
+      target: ${DATA_DIR:-/data}
+      volume:
+        nocopy: true
+    extra_hosts:
+    - "etcd077:10.12.1.77"
+    - "etcd078:10.12.1.78"
+    - "etcd079:10.12.1.79"
+    deploy:
+      mode: global
+      endpoint_mode: dnsrr
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        order: stop-first
+      restart_policy:
+        condition: any
+        max_attempts: 3
+        window: 120s
+      rollback_config:
+        parallelism: 1
+        failure_action: continue
+        order: stop-first
+    environment:
+      PATRONI_RAFT_DATA_DIR: ${DATA_DIR:-/data}
+      PATRONI_LOG_DIR: ${DATA_DIR:-/data}
+      PATRONI_LOG_LEVEL: DEBUG
+      PATRONI_NAMESPACE: patroni
+      PATRONI_SCOPE: test
+      PATRONI_NAME: "{{.Node.Hostname}}"
+      PATRONI_RAFT_SELF_ADDR: "{{.Node.Hostname}}:${PORT_RAFT:-2222}"
+      PATRONI_RAFT_PARTNER_ADDRS: "'10.12.1.77:${PORT_RAFT:-2222}','10.12.1.78:${PORT_RAFT:-2222}','10.12.1.79:${PORT_RAFT:-2222}'"
+
+volumes:
+  data:
+configs:
+  patroni.yaml:
+    external:
+      name: patroni_001.yml

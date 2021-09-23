@@ -1,0 +1,2 @@
+#!/usr/bin/env -S /bin/sh -e
+exec /usr/bin/env -S /usr/local/bin/patroni.raft.controller.opt-2.py /etc/patroni.yaml
